@@ -31,7 +31,7 @@ INCLUDES	:=	source
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O2\
+CFLAGS	:=	-g -Wall -Os\
 			-fomit-frame-pointer\
 			-ffast-math -std=c99\
 			$(ARCH)
@@ -41,7 +41,8 @@ CFLAGS	+=	$(INCLUDE) -DARM9 -Werror-implicit-function-declaration
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
 ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-nostartfiles -g --specs=../stub.specs $(ARCH) -Wl,-Map,$(TARGET).map
+LDFLAGS	:=	-nostartfiles -g --specs=../stub.specs $(ARCH) -Wl,-Map,$(TARGET).map
+OCFLAGS	:=	--set-section-flags .bss=alloc,load,contents
 
 LIBS	:=
 
@@ -123,7 +124,7 @@ $(OUTPUT).elf	:	$(OFILES)
 
 #---------------------------------------------------------------------------------
 %.bin: %.elf
-	@$(OBJCOPY) -O binary $< $@
+	@$(OBJCOPY) $(OCFLAGS) -O binary $< $@
 	@echo built ... $(notdir $@)
 
 

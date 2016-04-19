@@ -14,10 +14,12 @@
 
 #define RGB(r,g,b) (r<<24|b<<16|g<<8|r)
 
-#define TOP_SCREEN0 (u8*)(0x20000000)
-#define TOP_SCREEN1 (u8*)(0x20046500)
-#define BOT_SCREEN0 (u8*)(0x2008CA00)
-#define BOT_SCREEN1 (u8*)(0x200C4E00)
+// These offsets have a pointer to the FBs actual location.
+#define TOP_SCREEN0 (u8*)(*(u32*)0x23FFFE00)
+#define TOP_SCREEN1 (u8*)(*(u32*)0x23FFFE00)
+#define BOT_SCREEN0 (u8*)(*(u32*)0x23FFFE08)
+#define BOT_SCREEN1 (u8*)(*(u32*)0x23FFFE08)
+
 extern int current_y;
 
 void ClearScreen(unsigned char *screen, int color);
