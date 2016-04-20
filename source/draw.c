@@ -64,28 +64,73 @@ void DrawStringF(int x, int y, const char *format, ...)
     vsnprintf(str, 256, format, va);
     va_end(va);
 
-    DrawString(TOP_SCREEN0, str, x, y, RGB(0, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN1, str, x, y, RGB(0, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN0, str, x, y, RGB(255, 255, 255), RGB(0, 0, 0));
 }
 
 void Debug(const char *format, ...)
 {
     char str[50];
-    const char* spaces = "                                                X";
     va_list va;
 
     va_start(va, format);
     vsnprintf(str, sizeof(str), format, va);
     va_end(va);
-    snprintf(str, sizeof(str), "%s%s", str, spaces);
 
-    DrawString(TOP_SCREEN0, str, 10, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN0, spaces, 10, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN1, str, 10, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN1, spaces, 10, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN0, str, 0, current_y, RGB(255, 255, 255), RGB(0, 0, 0));
 
     current_y += 10;
-    if (current_y >= 240) {
+    if (current_y >= 220) {
         current_y = 0;
     }
+}
+
+int xy_to_offset(int x, int y) {
+    if (x > 400 || y > 240) return 0; // Whoa, not okay.
+
+    int xDisplacement = (x * BYTES_PER_PIXEL * SCREEN_WIDTH);
+    int yDisplacement = ((SCREEN_WIDTH - y - 1) * BYTES_PER_PIXEL);
+    return xDisplacement + yDisplacement;
+}
+
+void RewindLines(int lines) {
+	current_y -= 10 * lines;
+	if (current_y < 0 || current_y >= 220)
+		current_y = 0;
+}
+
+void line(u8* screen, int line, int color) {
+    int xDis = (line * BYTES_PER_PIXEL * SCREEN_WIDTH);
+    int yDis = ((SCREEN_WIDTH - 239) * BYTES_PER_PIXEL);
+
+	u8* at = screen + (xDis + yDis);
+	for(int j=0; j<8; j++) {
+		*at++ = (color >> 16) & 0xff;
+		*at++ = (color >> 8) & 0xff;
+		*at++ = color & 0xff;
+	}
+}
+
+u32 last_current = 0, last_max = 0, last_pix = 0;
+void ProgressBar(u32 current, u32 max) {
+	if (last_current == current && last_max == max)
+		return 0;
+
+ 	u32 cur_pix = current * 400 / max;
+	if (cur_pix > 400) cur_pix = 400;
+
+	if (cur_pix == last_pix) return 0;
+
+	last_current = current;
+	last_max = max;
+	last_pix = cur_pix;
+
+	for(int i=0; i < 400; i++) {
+		int col = 0;
+		if (i < cur_pix)
+			col = RGB(255, 255, 255);
+		else
+			col = RGB(50, 50, 50);
+
+		line(TOP_SCREEN0, i, col);
+	}
 }

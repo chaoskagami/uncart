@@ -17,8 +17,8 @@ static FATFS fs;
 static FIL file;
 
 static void ClearTop(void) {
-    ClearScreen(TOP_SCREEN0, RGB(255, 255, 255));
-    ClearScreen(TOP_SCREEN1, RGB(255, 255, 255));
+    ClearScreen(TOP_SCREEN0, RGB(0, 0, 0));
+    ClearScreen(TOP_SCREEN1, RGB(0, 0, 0));
     current_y = 0;
 }
 
@@ -57,18 +57,22 @@ int dump_cart_region(u32 start_sector, u32 end_sector, FIL* output_file, struct 
             CTR_CmdReadData(current_sector, ctx->media_unit, read_size, read_ptr);
             read_ptr += ctx->media_unit * read_size;
             current_sector += read_size;
+
+			ProgressBar(current_sector, ctx->cart_size);
         }
 
         u8* write_ptr = ctx->buffer;
         while (write_ptr < read_ptr) {
             unsigned int bytes_written = 0;
             f_write(output_file, write_ptr, read_ptr - write_ptr, &bytes_written);
-            Debug("Wrote 0x%x bytes, e.g. %08x", bytes_written, *(u32*)write_ptr);
+            Debug("  Wrote 0x%x bytes [..%08x..]", bytes_written, *(u32*)write_ptr);
 
             if (bytes_written == 0) {
-                Debug("Writing failed! :( SD full?");
+                Debug("  Writing failed. SD full?");
                 return -1;
             }
+
+			RewindLines(2);
 
             write_ptr += bytes_written;
         }
@@ -79,10 +83,10 @@ int dump_cart_region(u32 start_sector, u32 end_sector, FIL* output_file, struct 
 
 int main() {
 
-restart_program:
     // Setup boring stuff - clear the screen, initialize SD output, etc...
     ClearTop();
     Debug("ROM dump tool v0.2");
+restart_program:
     Debug("Insert your game cart now.");
     wait_key();
 
@@ -99,9 +103,9 @@ restart_program:
     // ROM DUMPING CODE STARTS HERE
 
     Cart_Init();
-    Debug("Cart id is %08x", Cart_GetID());
+    Debug("  Cart id is %08x", Cart_GetID());
     CTR_CmdReadHeader(header);
-    Debug("Done reading header: %08X :)...", *(u32*)&header[0x100]);
+    Debug("  Done reading header: %08X :)...", *(u32*)&header[0x100]);
 
     // TODO: Check first header bytes for "NCCH" or other magic words
     u32 sec_keys[4];
@@ -115,10 +119,11 @@ restart_program:
 
     u32 NCSD_magic = *(u32*)(&target[0x100]);
     u32 cartSize = *(u32*)(&target[0x104]);
-    Debug("Cart size: %llu MB", (u64)cartSize * (u64)mediaUnit / 1024ull / 1024ull);
+    Debug("  Cart size: %llu MB", (u64)cartSize * (u64)mediaUnit / 1024ull / 1024ull);
     if (NCSD_magic != 0x4453434E) {
-        Debug("NCSD magic not found in header!!!");
-        Debug("Press A to continue anyway.");
+		Debug("");
+        Debug("  NCSD magic not found in header.");
+        Debug("  Press A to continue anyway.");
         if (!(InputWait() & BUTTON_A))
             goto restart_prompt;
     }
@@ -140,8 +145,8 @@ restart_program:
         char extension_digit = cartSize <= file_max_blocks ? 's' : '0' + current_part;
         snprintf(filename_buf, sizeof(filename_buf), "/%.16s.3d%c", &header[0x150], extension_digit);
         Debug("Writing to file: \"%s\"", filename_buf);
-        Debug("Change the SD card now and/or press a key.");
-        Debug("(Or SELECT to cancel)");
+        Debug("  Change the SD card now and/or press a key.");
+        Debug("  (Or SELECT to cancel)");
         if (InputWait() & BUTTON_SELECT)
             break;
 
@@ -176,7 +181,7 @@ restart_program:
             f_write(&file, header, 0x3000, &written);
         }
 
-        Debug("Done!");
+        Debug("Done.");
         current_part += 1;
 
 cleanup_file:
@@ -191,8 +196,10 @@ cleanup_none:
 
 restart_prompt:
     Debug("Press B to exit, any other key to restart.");
-    if (!(InputWait() & BUTTON_B))
+    if (!(InputWait() & BUTTON_B)) {
+		ClearTop();
         goto restart_program;
+	}
 
     Reboot();
     return 0;
