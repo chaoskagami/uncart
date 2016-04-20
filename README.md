@@ -3,6 +3,12 @@
 
 This fork is a9lh-compatible, based on the patch released by Plailect. It contains only the minimal changes for a9lh, not the fancy (albeit likely proper) resize code.
 
+This branch contains several UI improvements:
+- Progress bar at bottom to measure precise read progress
+- No eye-murder colors (in favor of standard white-on-black)
+- Rewinding for repeated messages to avoid readability issues arising from looping text
+- Less interrobangs
+
 Credits go to:
 - archshift: code cleanups; general polishing of my PoC dumper
 - Lioncash: code cleanups
