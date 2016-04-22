@@ -181,6 +181,7 @@ restart_program:
             f_write(&file, header, 0x3000, &written);
         }
 
+		Debug(""); // Otherwise, we're on a line that was rewinded.
         Debug("Done.");
         current_part += 1;
 
